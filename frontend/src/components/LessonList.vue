@@ -119,27 +119,35 @@ export default {
       return [...this.lessons].sort((a, b) => {
         let compareA = a[this.sortBy];
         let compareB = b[this.sortBy];
+
+        // Handle string comparisons
         if (typeof compareA === "string") {
           compareA = compareA.toLowerCase();
           compareB = compareB.toLowerCase();
         }
+
+        // Handle numeric comparisons
         if (this.sortBy === "price" || this.sortBy === "spaces") {
           compareA = Number(compareA);
           compareB = Number(compareB);
         }
+
+        // Sort logic
         if (compareA < compareB) return this.ascending ? -1 : 1;
         if (compareA > compareB) return this.ascending ? 1 : -1;
         return 0;
       });
     },
+
     sortOrderIcon() {
+      if (this.sortBy === "price" || this.sortBy === "spaces") {
+        return this.ascending ? "fa-arrow-up-1-9" : "fa-arrow-down-9-1";
+      }
       return this.ascending ? "fa-arrow-up-a-z" : "fa-arrow-down-z-a";
     },
+
     sortOrderText() {
       return this.ascending ? "Ascending" : "Descending";
-    },
-    cartItemsCount() {
-      return this.cartItems.length;
     },
   },
   async created() {
@@ -160,6 +168,9 @@ export default {
     }
   },
   methods: {
+    toggleSortOrder() {
+      this.ascending = !this.ascending;
+    },
     addToCart(lesson) {
       const now = Date.now();
       const RAPID_CLICK_THRESHOLD = 1000;
