@@ -1,3 +1,20 @@
+/* src/assets/main.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Add custom transitions for sorting */
+.grid {
+  @apply transition-all duration-300;
+}
+
+.lesson-card-enter-active,
+.lesson-card-leave-active {
+  transition: all 0.3s ease;
+}
+
+.lesson-card-enter-from,
+.lesson-card-leave-to {
+  opacity: 0;
+  transform: translateY(30px);
+}

@@ -2,7 +2,7 @@ export const lessons = [
   {
     id: 1,
     subject: "Mathematics",
-    location: "Room 101",
+    location: "H101",
     price: 50,
     spaces: 5,
     icon: "fa-square-root-variable",
@@ -10,7 +10,7 @@ export const lessons = [
   {
     id: 2,
     subject: "Physics",
-    location: "Lab 203",
+    location: "A203",
     price: 60,
     spaces: 5,
     icon: "fa-atom",
@@ -18,7 +18,7 @@ export const lessons = [
   {
     id: 3,
     subject: "Chemistry",
-    location: "Lab 205",
+    location: "C205",
     price: 55,
     spaces: 5,
     icon: "fa-flask",
@@ -26,7 +26,7 @@ export const lessons = [
   {
     id: 4,
     subject: "Biology",
-    location: "Lab 301",
+    location: "B301",
     price: 45,
     spaces: 5,
     icon: "fa-dna",
@@ -34,7 +34,7 @@ export const lessons = [
   {
     id: 5,
     subject: "Computer Science",
-    location: "Room 405",
+    location: "F405",
     price: 65,
     spaces: 5,
     icon: "fa-laptop-code",
@@ -42,7 +42,7 @@ export const lessons = [
   {
     id: 6,
     subject: "English Literature",
-    location: "Room 102",
+    location: "A102",
     price: 40,
     spaces: 5,
     icon: "fa-book",
@@ -50,7 +50,7 @@ export const lessons = [
   {
     id: 7,
     subject: "History",
-    location: "Room 204",
+    location: "D204",
     price: 45,
     spaces: 5,
     icon: "fa-landmark",
@@ -58,7 +58,7 @@ export const lessons = [
   {
     id: 8,
     subject: "Geography",
-    location: "Room 303",
+    location: "A303",
     price: 50,
     spaces: 5,
     icon: "fa-earth-americas",
@@ -66,7 +66,7 @@ export const lessons = [
   {
     id: 9,
     subject: "Art",
-    location: "Studio 401",
+    location: "C401",
     price: 55,
     spaces: 5,
     icon: "fa-palette",
@@ -74,7 +74,7 @@ export const lessons = [
   {
     id: 10,
     subject: "Music",
-    location: "Music Hall",
+    location: "F100",
     price: 60,
     spaces: 5,
     icon: "fa-music",
