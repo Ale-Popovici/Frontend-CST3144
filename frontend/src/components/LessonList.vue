@@ -84,12 +84,13 @@
   </div>
 </template>
 
+// src/components/LessonList.vue
 <script>
 import LessonCard from "./LessonCard.vue";
 import SortIndicator from "./SortIndicator.vue";
 import ToastNotification from "./ToastNotification.vue";
 import ShoppingCart from "./ShoppingCart.vue";
-import { lessons } from "../data/lessons.js";
+import { api } from "../services/api";
 
 export default {
   name: "LessonList",
@@ -101,12 +102,9 @@ export default {
   },
   data() {
     return {
-      lessons: lessons.map((lesson) => ({
-        ...lesson,
-        spaces: lesson.spaces,
-        clickCount: 0,
-        lastClickTime: 0,
-      })),
+      lessons: [],
+      loading: false,
+      error: null,
       sortBy: "subject",
       ascending: true,
       cartItems: [],
@@ -135,9 +133,6 @@ export default {
       });
     },
     sortOrderIcon() {
-      if (this.sortBy === "price" || this.sortBy === "spaces") {
-        return this.ascending ? "fa-arrow-up-1-9" : "fa-arrow-down-9-1";
-      }
       return this.ascending ? "fa-arrow-up-a-z" : "fa-arrow-down-z-a";
     },
     sortOrderText() {
@@ -147,27 +142,37 @@ export default {
       return this.cartItems.length;
     },
   },
+  async created() {
+    try {
+      this.loading = true;
+      this.lessons = await api.getLessons();
+      this.lessons = this.lessons.map((lesson) => ({
+        ...lesson,
+        clickCount: 0,
+        lastClickTime: 0,
+        originalSpaces: lesson.spaces,
+      }));
+    } catch (error) {
+      this.error = "Failed to load lessons. Please try again later.";
+      console.error("Error:", error);
+    } finally {
+      this.loading = false;
+    }
+  },
   methods: {
-    toggleSortOrder() {
-      this.ascending = !this.ascending;
-    },
     addToCart(lesson) {
       const now = Date.now();
       const RAPID_CLICK_THRESHOLD = 1000;
 
       if (lesson.spaces > 0) {
-        // Check for rapid clicks
         if (now - lesson.lastClickTime < RAPID_CLICK_THRESHOLD) {
           lesson.clickCount++;
         } else {
           lesson.clickCount = 1;
         }
         lesson.lastClickTime = now;
-
-        // Reduce available spaces
         lesson.spaces--;
 
-        // Add to cart
         this.cartItems.push({
           id: lesson.id,
           subject: lesson.subject,
@@ -176,13 +181,81 @@ export default {
           addedAt: new Date(),
         });
 
-        // Show toast message with multiplier
         this.showToastMessage(
           `${lesson.subject} (£${lesson.price})`,
           lesson.clickCount
         );
       }
     },
+
+    removeFromCart(item) {
+      const lesson = this.lessons.find((l) => l.id === item.id);
+      if (lesson) {
+        lesson.spaces++;
+      }
+
+      const index = this.cartItems.findIndex(
+        (cartItem) =>
+          cartItem.id === item.id && cartItem.addedAt === item.addedAt
+      );
+      if (index !== -1) {
+        this.cartItems.splice(index, 1);
+      }
+
+      this.showToastMessage(`${item.subject} removed from cart`);
+    },
+
+    async handleCheckoutComplete(orderData) {
+      try {
+        const lessonIds = this.cartItems.map((item) => item.id);
+
+        // Create order in backend
+        await api.createOrder({
+          ...orderData,
+          lessonIds,
+          numberOfSpace: 1,
+        });
+
+        // After successful order, update spaces in backend
+        for (const item of this.cartItems) {
+          const lesson = this.lessons.find((l) => l.id === item.id);
+          if (lesson) {
+            await api.updateLessonSpace(lesson.id, lesson.spaces);
+          }
+        }
+
+        // Clear cart and update UI
+        this.cartItems = [];
+        this.showCart = false;
+        this.showToastMessage("Thank you for your order!");
+
+        // Refresh lessons
+        const updatedLessons = await api.getLessons();
+        this.lessons = updatedLessons.map((lesson) => ({
+          ...lesson,
+          clickCount: 0,
+          lastClickTime: 0,
+          originalSpaces: lesson.spaces,
+        }));
+      } catch (error) {
+        // Restore original spaces if checkout fails
+        this.lessons.forEach((lesson) => {
+          lesson.spaces = lesson.originalSpaces;
+        });
+        this.cartItems = [];
+        this.showToastMessage("Failed to complete checkout. Please try again.");
+      }
+    },
+
+    cancelCheckout() {
+      // Restore original spaces
+      this.lessons.forEach((lesson) => {
+        lesson.spaces = lesson.originalSpaces;
+      });
+      this.cartItems = [];
+      this.showCart = false;
+    },
+
     showToastMessage(message, multiplier = 1) {
       this.toastMessage = message;
       this.toastMultiplier = multiplier;
@@ -193,33 +266,15 @@ export default {
         this.toastMultiplier = 1;
       }, 3000);
     },
-    removeFromCart(item) {
-      // Find the lesson and increase its spaces
-      const lesson = this.lessons.find((l) => l.id === item.id);
-      if (lesson) {
-        lesson.spaces++;
-      }
-
-      // Remove item from cart
-      const index = this.cartItems.findIndex(
-        (cartItem) =>
-          cartItem.id === item.id && cartItem.addedAt === item.addedAt
-      );
-      if (index !== -1) {
-        this.cartItems.splice(index, 1);
-      }
-
-      // Show toast
-      this.showToastMessage(`${item.subject} removed from cart`);
-    },
-    handleCheckoutComplete() {
-      // Clear the cart
-      this.cartItems = [];
-      // Hide cart view
-      this.showCart = false;
-      // Show success message
-      this.showToastMessage("Thank you for your order!");
-    },
+  },
+  // Changed from beforeDestroy to beforeUnmount
+  beforeUnmount() {
+    // Restore original spaces if page is closed/refreshed with items in cart
+    if (this.cartItems.length > 0) {
+      this.lessons.forEach((lesson) => {
+        lesson.spaces = lesson.originalSpaces;
+      });
+    }
   },
 };
 </script>

@@ -227,8 +227,14 @@ export default {
       }
     },
 
-    handleCheckout() {
+    async handleCheckout() {
       if (this.isFormValid) {
+        // Emit checkout event with form data
+        this.$emit("checkout-complete", {
+          name: this.checkoutForm.name,
+          phone: this.checkoutForm.phone,
+        });
+
         this.showConfirmation = true;
       }
     },
