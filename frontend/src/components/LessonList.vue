@@ -1,6 +1,14 @@
 <template>
   <div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold text-gray-800 mb-8">Available Lessons</h1>
+    <div class="flex justify-between items-center mb-8">
+      <h1 class="text-3xl font-bold text-gray-800">Available Lessons</h1>
+
+      <!-- Cart Summary -->
+      <div class="bg-white px-4 py-2 rounded-lg shadow-md flex items-center">
+        <i class="fas fa-shopping-cart text-blue-600 text-xl mr-2"></i>
+        <span class="font-medium">Cart Items: {{ cartItemsCount }}</span>
+      </div>
+    </div>
 
     <!-- Sorting Controls -->
     <div
@@ -19,7 +27,6 @@
           <option value="spaces">Spaces</option>
         </select>
       </div>
-
       <button
         @click="toggleSortOrder"
         class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
@@ -41,14 +48,23 @@
         v-for="lesson in sortedLessons"
         :key="lesson.id"
         :lesson="lesson"
+        @add-to-cart="addToCart"
       />
     </div>
+
+    <!-- Toast Notification -->
+    <ToastNotification
+      :show="showToast"
+      :message="toastMessage"
+      :multiplier="toastMultiplier"
+    />
   </div>
 </template>
 
 <script>
 import LessonCard from "./LessonCard.vue";
 import SortIndicator from "./SortIndicator.vue";
+import ToastNotification from "./ToastNotification.vue";
 import { lessons } from "../data/lessons.js";
 
 export default {
@@ -56,12 +72,22 @@ export default {
   components: {
     LessonCard,
     SortIndicator,
+    ToastNotification,
   },
   data() {
     return {
-      lessons,
-      sortBy: "subject", // default sort attribute
-      ascending: true, // default sort order
+      lessons: lessons.map((lesson) => ({
+        ...lesson,
+        spaces: lesson.spaces,
+        clickCount: 0,
+        lastClickTime: 0,
+      })),
+      sortBy: "subject",
+      ascending: true,
+      cartItems: [], // Array to store cart items
+      showToast: false,
+      toastMessage: "",
+      toastMultiplier: 1,
     };
   },
   computed: {
@@ -69,19 +95,14 @@ export default {
       return [...this.lessons].sort((a, b) => {
         let compareA = a[this.sortBy];
         let compareB = b[this.sortBy];
-
-        // Handle string comparison
         if (typeof compareA === "string") {
           compareA = compareA.toLowerCase();
           compareB = compareB.toLowerCase();
         }
-
-        // Handle numeric comparison
         if (this.sortBy === "price" || this.sortBy === "spaces") {
           compareA = Number(compareA);
           compareB = Number(compareB);
         }
-
         if (compareA < compareB) return this.ascending ? -1 : 1;
         if (compareA > compareB) return this.ascending ? 1 : -1;
         return 0;
@@ -96,11 +117,74 @@ export default {
     sortOrderText() {
       return this.ascending ? "Ascending" : "Descending";
     },
+    cartItemsCount() {
+      return this.cartItems.length;
+    },
   },
   methods: {
     toggleSortOrder() {
       this.ascending = !this.ascending;
     },
+    addToCart(lesson) {
+      const now = Date.now();
+      const RAPID_CLICK_THRESHOLD = 1000;
+
+      if (lesson.spaces > 0) {
+        // Reduce available spaces
+        if (now - lesson.lastClickTime < RAPID_CLICK_THRESHOLD) {
+          lesson.clickCount++;
+        } else {
+          lesson.clickCount = 1;
+        }
+        lesson.lastClickTime = now;
+
+        // Reduce available spaces
+        lesson.spaces--;
+
+        // Add to cart
+        this.cartItems.push({
+          id: lesson.id,
+          subject: lesson.subject,
+          price: lesson.price,
+          addedAt: new Date(),
+        });
+
+        // Show toast message with multiplier if rapid clicking
+        this.showToastMessage(
+          `${lesson.subject} (£${lesson.price})`,
+          lesson.clickCount
+        );
+      }
+    },
+    showToastMessage(message, multiplier = 1) {
+      this.toastMessage = message;
+      this.toastMultiplier = multiplier;
+      this.showToast = true;
+
+      // Hide toast after 3 seconds
+      setTimeout(() => {
+        this.showToast = false;
+        this.toastMultiplier = 1;
+      }, 3000);
+    },
   },
 };
 </script>
+
+<style scoped>
+.cart-bump {
+  animation: bump 0.3s ease-out;
+}
+
+@keyframes bump {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+</style>

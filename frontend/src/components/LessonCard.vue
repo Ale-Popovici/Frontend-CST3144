@@ -19,6 +19,21 @@
         <i class="fas fa-user-group mr-2"></i>
         Spaces: {{ lesson.spaces }}
       </p>
+
+      <!-- Add to Cart Button -->
+      <button
+        @click="$emit('add-to-cart', lesson)"
+        :disabled="lesson.spaces === 0"
+        class="w-full mt-4 px-4 py-2 rounded-md text-white font-medium transition-colors"
+        :class="[
+          lesson.spaces > 0
+            ? 'bg-blue-600 hover:bg-blue-700'
+            : 'bg-gray-400 cursor-not-allowed',
+        ]"
+      >
+        <i class="fas fa-cart-plus mr-2"></i>
+        {{ lesson.spaces > 0 ? "Add to Cart" : "No Spaces Left" }}
+      </button>
     </div>
   </div>
 </template>
