@@ -26,6 +26,7 @@
         :cartItems="cartItems"
         @toggle-cart="showCart = false"
         @remove-from-cart="removeFromCart"
+        @checkout-complete="handleCheckoutComplete"
       />
 
       <!-- Lessons View -->
@@ -210,6 +211,14 @@ export default {
 
       // Show toast
       this.showToastMessage(`${item.subject} removed from cart`);
+    },
+    handleCheckoutComplete() {
+      // Clear the cart
+      this.cartItems = [];
+      // Hide cart view
+      this.showCart = false;
+      // Show success message
+      this.showToastMessage("Thank you for your order!");
     },
   },
 };
