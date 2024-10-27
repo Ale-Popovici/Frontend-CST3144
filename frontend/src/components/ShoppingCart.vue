@@ -59,38 +59,50 @@
           <!-- Name Input -->
           <div class="mb-4">
             <label class="block text-gray-700 mb-2" for="name">
-              Name
-              <span class="text-red-500">*</span>
+              Name <span class="text-red-500">*</span>
             </label>
             <input
               id="name"
               v-model="checkoutForm.name"
               type="text"
               class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              :class="{ 'border-red-500': nameError }"
+              :class="{
+                'border-red-500': nameError,
+                'border-green-500': checkoutForm.name && !nameError,
+              }"
               @input="validateName"
+              placeholder="e.g., John Smith or Mary Jane-Smith"
             />
             <p v-if="nameError" class="mt-1 text-sm text-red-500">
               {{ nameError }}
+            </p>
+            <p v-else class="mt-1 text-sm text-gray-500">
+              Allowed: letters, spaces, hyphens, and apostrophes
             </p>
           </div>
 
           <!-- Phone Input -->
           <div class="mb-6">
             <label class="block text-gray-700 mb-2" for="phone">
-              Phone
-              <span class="text-red-500">*</span>
+              Phone <span class="text-red-500">*</span>
             </label>
             <input
               id="phone"
               v-model="checkoutForm.phone"
-              type="text"
+              type="tel"
               class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              :class="{ 'border-red-500': phoneError }"
+              :class="{
+                'border-red-500': phoneError,
+                'border-green-500': checkoutForm.phone && !phoneError,
+              }"
               @input="validatePhone"
+              placeholder="e.g., (123) 456-7890"
             />
             <p v-if="phoneError" class="mt-1 text-sm text-red-500">
               {{ phoneError }}
+            </p>
+            <p v-else class="mt-1 text-sm text-gray-500">
+              Format: +X (XXX) XXX-XXXX or XXXXXXXXXX
             </p>
           </div>
 
@@ -115,7 +127,7 @@
     <!-- Confirmation Modal -->
     <div
       v-if="showConfirmation"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
     >
       <div class="bg-white rounded-lg p-6 max-w-md w-full">
         <div class="text-center">
@@ -174,30 +186,53 @@ export default {
   },
   methods: {
     validateName() {
-      const nameRegex = /^[a-zA-Z\s]*$/;
+      // Validate name: letters, spaces, hyphens, apostrophes
+      const nameRegex = /^[A-Za-z][A-Za-z''-]+([ ][A-Za-z][A-Za-z''-]+)*$/;
+
       if (!this.checkoutForm.name) {
         this.nameError = "Name is required";
-      } else if (!nameRegex.test(this.checkoutForm.name)) {
-        this.nameError = "Name must contain only letters";
+      } else if (this.checkoutForm.name.length < 2) {
+        this.nameError = "Name must be at least 2 characters long";
+      } else if (this.checkoutForm.name.length > 50) {
+        this.nameError = "Name must not exceed 50 characters";
+      } else if (!nameRegex.test(this.checkoutForm.name.trim())) {
+        this.nameError =
+          "Please enter a valid name (e.g., John Smith, Mary Jane-Smith, O'Connor)";
       } else {
         this.nameError = "";
       }
     },
+
     validatePhone() {
-      const phoneRegex = /^\d+$/;
+      // Validate phone: optional country code, area code, proper formatting
+      const phoneRegex =
+        /^(?:\+?\d{1,3}[-. ]?)?\(?(?:\d{3})\)?[-. ]?\d{3}[-. ]?\d{4}$/;
+
       if (!this.checkoutForm.phone) {
         this.phoneError = "Phone number is required";
-      } else if (!phoneRegex.test(this.checkoutForm.phone)) {
-        this.phoneError = "Phone must contain only numbers";
       } else {
-        this.phoneError = "";
+        // Remove all non-digits for length checking
+        const digitsOnly = this.checkoutForm.phone.replace(/[^0-9]/g, "");
+
+        if (digitsOnly.length < 10) {
+          this.phoneError = "Phone number must have at least 10 digits";
+        } else if (digitsOnly.length > 15) {
+          this.phoneError = "Phone number cannot exceed 15 digits";
+        } else if (!phoneRegex.test(this.checkoutForm.phone)) {
+          this.phoneError =
+            "Please enter a valid phone number (e.g., +1 (123) 456-7890 or 1234567890)";
+        } else {
+          this.phoneError = "";
+        }
       }
     },
+
     handleCheckout() {
       if (this.isFormValid) {
         this.showConfirmation = true;
       }
     },
+
     finishCheckout() {
       this.showConfirmation = false;
       // Emit event to clear cart
