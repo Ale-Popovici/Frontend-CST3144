@@ -11,12 +11,12 @@ const getLessons = async () => {
 
     // Transform the data to match frontend structure
     return data.map((lesson) => ({
-      id: lesson._id,
-      subject: lesson.topic,
+      id: lesson.id,
+      subject: lesson.subject,
       location: lesson.location,
       price: lesson.price,
-      spaces: lesson.space,
-      icon: getDefaultIcon(lesson.topic),
+      spaces: lesson.spaces,
+      icon: getDefaultIcon(lesson.subject),
     }));
   } catch (error) {
     console.error("Error fetching lessons:", error);
