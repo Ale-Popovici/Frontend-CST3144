@@ -15,9 +15,16 @@
         ]"
       >
         <i class="fas fa-shopping-cart text-xl mr-2"></i>
-        <span class="font-medium">Cart Items: {{ cartItemsCount }}</span>
+        <span class="font-medium">Cart Items: {{ cartItems.length }}</span>
       </button>
     </div>
+
+    <!-- Search Bar -->
+    <SearchBar
+      :initial-count="sortedLessons.length"
+      @search="handleSearch"
+      class="mb-6"
+    />
 
     <transition name="fade" mode="out-in">
       <!-- Shopping Cart View -->
@@ -31,46 +38,77 @@
 
       <!-- Lessons View -->
       <div v-else>
-        <!-- Sorting Controls -->
-        <div
-          class="flex flex-wrap gap-4 mb-6 items-center bg-white p-4 rounded-lg shadow"
-        >
-          <div class="flex items-center">
-            <label for="sortBy" class="mr-2 text-gray-700">Sort by:</label>
-            <select
-              id="sortBy"
-              v-model="sortBy"
-              class="border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="subject">Subject</option>
-              <option value="location">Location</option>
-              <option value="price">Price</option>
-              <option value="spaces">Spaces</option>
-            </select>
-          </div>
-          <button
-            @click="toggleSortOrder"
-            class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          >
-            <i :class="['fas', sortOrderIcon]"></i>
-            {{ sortOrderText }}
-          </button>
+        <!-- Loading State -->
+        <div v-if="loading" class="flex justify-center items-center py-8">
+          <div
+            class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
+          ></div>
         </div>
 
-        <!-- Sort Indicator -->
-        <SortIndicator :attribute="sortBy" :order="ascending" class="mb-6" />
-
-        <!-- Lessons Grid -->
+        <!-- Error State -->
         <div
-          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          :key="sortBy + ascending"
+          v-else-if="error"
+          class="bg-red-50 text-red-600 p-4 rounded-lg mb-6"
         >
-          <LessonCard
-            v-for="lesson in sortedLessons"
-            :key="lesson.id"
-            :lesson="lesson"
-            @add-to-cart="addToCart"
+          {{ error }}
+        </div>
+
+        <!-- Content -->
+        <div v-else>
+          <!-- Sorting Controls -->
+          <div
+            class="flex flex-wrap gap-4 mb-6 items-center bg-white p-4 rounded-lg shadow"
+          >
+            <div class="flex items-center">
+              <label for="sortBy" class="mr-2 text-gray-700">Sort by:</label>
+              <select
+                id="sortBy"
+                v-model="sortBy"
+                class="border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="subject">Subject</option>
+                <option value="location">Location</option>
+                <option value="price">Price</option>
+                <option value="spaces">Spaces</option>
+              </select>
+            </div>
+            <button
+              @click="toggleSortOrder"
+              class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              <i :class="['fas', sortOrderIcon]"></i>
+              {{ sortOrderText }}
+            </button>
+          </div>
+
+          <!-- Sort Indicator -->
+          <SortIndicator
+            :attribute="sortBy"
+            :ascending="ascending"
+            class="mb-6"
           />
+
+          <!-- No Results Message -->
+          <div
+            v-if="sortedLessons.length === 0"
+            class="text-center py-8 text-gray-500"
+          >
+            No lessons found matching your search.
+          </div>
+
+          <!-- Lessons Grid -->
+          <div
+            v-else
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            :key="sortBy + ascending"
+          >
+            <LessonCard
+              v-for="lesson in sortedLessons"
+              :key="lesson.id"
+              :lesson="lesson"
+              @add-to-cart="addToCart"
+            />
+          </div>
         </div>
       </div>
     </transition>
@@ -84,12 +122,12 @@
   </div>
 </template>
 
-// src/components/LessonList.vue
 <script>
 import LessonCard from "./LessonCard.vue";
 import SortIndicator from "./SortIndicator.vue";
 import ToastNotification from "./ToastNotification.vue";
 import ShoppingCart from "./ShoppingCart.vue";
+import SearchBar from "./SearchBar.vue";
 import { api } from "../services/api";
 
 export default {
@@ -99,6 +137,7 @@ export default {
     SortIndicator,
     ToastNotification,
     ShoppingCart,
+    SearchBar,
   },
   data() {
     return {
@@ -112,6 +151,8 @@ export default {
       toastMessage: "",
       toastMultiplier: 1,
       showCart: false,
+      isSearching: false,
+      searchTimeout: null,
     };
   },
   computed: {
@@ -151,26 +192,53 @@ export default {
     },
   },
   async created() {
-    try {
-      this.loading = true;
-      this.lessons = await api.getLessons();
-      this.lessons = this.lessons.map((lesson) => ({
-        ...lesson,
-        clickCount: 0,
-        lastClickTime: 0,
-        originalSpaces: lesson.spaces,
-      }));
-    } catch (error) {
-      this.error = "Failed to load lessons. Please try again later.";
-      console.error("Error:", error);
-    } finally {
-      this.loading = false;
-    }
+    await this.fetchLessons();
   },
   methods: {
+    async fetchLessons() {
+      try {
+        this.loading = true;
+        this.lessons = await api.getLessons();
+        this.lessons = this.lessons.map((lesson) => ({
+          ...lesson,
+          clickCount: 0,
+          lastClickTime: 0,
+          originalSpaces: lesson.spaces,
+        }));
+      } catch (error) {
+        this.error = "Failed to load lessons. Please try again later.";
+        console.error("Error:", error);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async handleSearch(searchTerm) {
+      try {
+        this.loading = true;
+        if (!searchTerm) {
+          await this.fetchLessons();
+        } else {
+          this.lessons = await api.searchLessons(searchTerm);
+          this.lessons = this.lessons.map((lesson) => ({
+            ...lesson,
+            clickCount: 0,
+            lastClickTime: 0,
+            originalSpaces: lesson.spaces,
+          }));
+        }
+      } catch (error) {
+        console.error("Search error:", error);
+        this.error = "Failed to search lessons";
+      } finally {
+        this.loading = false;
+      }
+    },
+
     toggleSortOrder() {
       this.ascending = !this.ascending;
     },
+
     addToCart(lesson) {
       const now = Date.now();
       const RAPID_CLICK_THRESHOLD = 1000;
@@ -241,13 +309,7 @@ export default {
         this.showToastMessage("Thank you for your order!");
 
         // Refresh lessons
-        const updatedLessons = await api.getLessons();
-        this.lessons = updatedLessons.map((lesson) => ({
-          ...lesson,
-          clickCount: 0,
-          lastClickTime: 0,
-          originalSpaces: lesson.spaces,
-        }));
+        await this.fetchLessons();
       } catch (error) {
         // Restore original spaces if checkout fails
         this.lessons.forEach((lesson) => {
@@ -256,15 +318,6 @@ export default {
         this.cartItems = [];
         this.showToastMessage("Failed to complete checkout. Please try again.");
       }
-    },
-
-    cancelCheckout() {
-      // Restore original spaces
-      this.lessons.forEach((lesson) => {
-        lesson.spaces = lesson.originalSpaces;
-      });
-      this.cartItems = [];
-      this.showCart = false;
     },
 
     showToastMessage(message, multiplier = 1) {
@@ -278,9 +331,7 @@ export default {
       }, 3000);
     },
   },
-  // Changed from beforeDestroy to beforeUnmount
   beforeUnmount() {
-    // Restore original spaces if page is closed/refreshed with items in cart
     if (this.cartItems.length > 0) {
       this.lessons.forEach((lesson) => {
         lesson.spaces = lesson.originalSpaces;

@@ -1,8 +1,7 @@
 // src/services/api.js
-
 const API_URL = "http://localhost:5001/api";
 
-// GET Lessons Function (Requirement A)
+// GET Lessons Function
 const getLessons = async () => {
   try {
     const response = await fetch(`${API_URL}/lessons`);
@@ -11,12 +10,12 @@ const getLessons = async () => {
 
     // Transform the data to match frontend structure
     return data.map((lesson) => ({
-      id: lesson.id,
-      subject: lesson.subject,
+      id: lesson._id,
+      subject: lesson.topic,
       location: lesson.location,
       price: lesson.price,
-      spaces: lesson.spaces,
-      icon: getDefaultIcon(lesson.subject),
+      spaces: lesson.space,
+      icon: getDefaultIcon(lesson.topic),
     }));
   } catch (error) {
     console.error("Error fetching lessons:", error);
@@ -24,7 +23,31 @@ const getLessons = async () => {
   }
 };
 
-// POST Order Function (Requirement B)
+// Search Lessons Function
+const searchLessons = async (searchTerm) => {
+  try {
+    const response = await fetch(
+      `${API_URL}/lessons/search?q=${encodeURIComponent(searchTerm)}`
+    );
+    if (!response.ok) throw new Error("Failed to search lessons");
+    const data = await response.json();
+
+    // Transform the data to match frontend structure
+    return data.map((lesson) => ({
+      id: lesson._id,
+      subject: lesson.topic,
+      location: lesson.location,
+      price: lesson.price,
+      spaces: lesson.space,
+      icon: getDefaultIcon(lesson.topic),
+    }));
+  } catch (error) {
+    console.error("Error searching lessons:", error);
+    throw error;
+  }
+};
+
+// POST Order Function
 const createOrder = async (orderData) => {
   try {
     const response = await fetch(`${API_URL}/orders`, {
@@ -52,7 +75,7 @@ const createOrder = async (orderData) => {
   }
 };
 
-// PUT Update Lesson Space Function (Requirement C)
+// PUT Update Lesson Space Function
 const updateLessonSpace = async (lessonId, newSpace) => {
   try {
     const response = await fetch(`${API_URL}/lessons/${lessonId}`, {
@@ -96,4 +119,5 @@ export const api = {
   getLessons,
   createOrder,
   updateLessonSpace,
+  searchLessons,
 };
