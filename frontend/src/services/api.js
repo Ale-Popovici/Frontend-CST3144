@@ -1,14 +1,11 @@
 // src/services/api.js
-const API_URL = "http://localhost:5001/api";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
-// GET Lessons Function
 const getLessons = async () => {
   try {
     const response = await fetch(`${API_URL}/lessons`);
     if (!response.ok) throw new Error("Failed to fetch lessons");
     const data = await response.json();
-
-    // Transform the data to match frontend structure
     return data.map((lesson) => ({
       id: lesson._id,
       subject: lesson.topic,
