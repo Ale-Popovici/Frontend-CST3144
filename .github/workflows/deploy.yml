@@ -29,14 +29,14 @@ jobs:
       - name: Create env file
         run: |
           cd frontend
-          echo "VUE_APP_API_URL=https://3.253.62.183:5001/api" > .env.production
+          echo "VUE_APP_API_URL=https://3.253.62.183/api" > .env.production
 
       - name: Build
         run: |
           cd frontend
           npm run build
         env:
-          VUE_APP_API_URL: https://3.253.62.183:5001/api
+          VUE_APP_API_URL: https://3.253.62.183/api
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
