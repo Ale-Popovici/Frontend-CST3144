@@ -4,7 +4,7 @@
 const API_URL =
   process.env.VUE_APP_API_URL ||
   (window.location.hostname === "ale-popovici.github.io"
-    ? "https://3.253.62.183/api"
+    ? "https://ec2-3-253-62-183.eu-west-1.compute.amazonaws.com/api/lessons"
     : "http://localhost:5001/api");
 
 console.log("API URL:", API_URL); //add
