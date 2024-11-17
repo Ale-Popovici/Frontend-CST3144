@@ -25,20 +25,22 @@ jobs:
         run: |
           cd frontend
           npm install
-          npm install @vue/cli-service --save-dev
+
+      - name: Create env file
+        run: |
+          cd frontend
+          echo "VUE_APP_API_URL=http://3.253.62.183:5001/api" > .env.production
 
       - name: Build
         run: |
           cd frontend
           npm run build
         env:
-          VUE_APP_API_URL: ${{ secrets.VUE_APP_API_URL }}
+          VUE_APP_API_URL: http://3.253.62.183:5001/api
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: frontend/dist
           branch: gh-pages
-          token: ${{ secrets.GITHUB_TOKEN }}
+          folder: frontend/dist
           clean: true
-          single-commit: true

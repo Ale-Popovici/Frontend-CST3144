@@ -1,8 +1,11 @@
 // src/services/api.js
-const API_URL = process.env.VUE_APP_API_URL || "http://localhost:5001/api";
+const API_URL = process.env.VUE_APP_API_URL || "http://3.253.62.183:5001/api";
+
+console.log("API URL:", API_URL); // Debug log
 
 const getLessons = async () => {
   try {
+    console.log("Fetching from:", API_URL); // Debug log
     const response = await fetch(`${API_URL}/lessons`);
     if (!response.ok) throw new Error("Failed to fetch lessons");
     const data = await response.json();
