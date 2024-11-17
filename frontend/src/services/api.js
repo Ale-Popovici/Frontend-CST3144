@@ -4,7 +4,7 @@
 const API_URL =
   process.env.VUE_APP_API_URL ||
   (window.location.hostname === "ale-popovici.github.io"
-    ? "http://ec2-3-253-62-183.eu-west-1.compute.amazonaws.com:5001/api"
+    ? "https://3.253.62.183/api"
     : "http://localhost:5001/api");
 
 console.log("API URL:", API_URL); // Debug log
