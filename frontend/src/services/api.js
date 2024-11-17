@@ -1,5 +1,5 @@
 // src/services/api.js
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+const API_URL = process.env.VUE_APP_API_URL || "http://localhost:5001/api";
 
 const getLessons = async () => {
   try {

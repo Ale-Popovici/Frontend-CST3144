@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -21,13 +22,14 @@ jobs:
         run: |
           cd frontend
           npm install
+          npm install @vue/cli-service --save-dev
 
       - name: Build
         run: |
           cd frontend
           npm run build
         env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VUE_APP_API_URL: ${{ secrets.VUE_APP_API_URL }}
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
