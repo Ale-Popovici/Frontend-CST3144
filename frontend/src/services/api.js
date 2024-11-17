@@ -7,7 +7,7 @@ const API_URL =
     ? "https://3.253.62.183/api"
     : "http://localhost:5001/api");
 
-console.log("API URL:", API_URL);
+console.log("API URL:", API_URL); //add
 
 // Fetch lessons
 const getLessons = async () => {
